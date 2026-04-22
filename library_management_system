@@ -1,0 +1,162 @@
+import json
+from datetime import datetime
+
+FILE_NAME = "library_data.json"
+
+# Load data from file
+def load_data():
+    try:
+        with open(FILE_NAME, "r") as f:
+            return json.load(f)
+    except:
+        return {
+            "101": {"title": "Python Basics", "available": True, "issued_to": None, "issue_date": None, "return_date": None, "days": 0},
+            "102": {"title": "Data Structures", "available": True, "issued_to": None, "issue_date": None, "return_date": None, "days": 0},
+            "103": {"title": "Algorithms", "available": True, "issued_to": None, "issue_date": None, "return_date": None, "days": 0}
+        }
+
+# Save data to file
+def save_data(library):
+    with open(FILE_NAME, "w") as f:
+        json.dump(library, f, indent=4)
+
+
+library = load_data()
+
+
+# Display books
+def display_books():
+    print("\n📚 LIBRARY BOOK LIST")
+    print("-" * 60)
+    for book_id, info in library.items():
+        status = "Available" if info["available"] else f"Issued to {info['issued_to']}"
+        print(f"ID: {book_id} | {info['title']} | {status}")
+    print("-" * 60)
+
+
+# Issue book
+def issue_book():
+    display_books()
+    book_id = input("Enter Book ID: ")
+
+    if book_id in library:
+        if library[book_id]["available"]:
+            name = input("Enter Student Name: ")
+            days = int(input("Enter number of days: "))
+            
+            issue_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            
+            library[book_id].update({
+                "available": False,
+                "issued_to": name,
+                "issue_date": issue_time,
+                "return_date": None,
+                "days": days
+            })
+
+            save_data(library)
+
+            print(f"\n✅ Book Issued Successfully!")
+            print(f"👤 Student: {name}")
+            print(f"📅 Issue Date & Time: {issue_time}")
+            print(f"⏳ Allowed Days: {days}")
+            print("\n⚠ Fine Policy:")
+            print(" Week 1: 10 Rs/day")
+            print(" Week 2: 20 Rs/day")
+            print(" Week 3: 60 Rs/day ...")
+
+        else:
+            print("❌ Book already issued.")
+    else:
+        print("❌ Invalid Book ID.")
+
+
+# Fine calculation
+def calculate_fine(extra_days):
+    fine = 0
+    week = 1
+
+    while extra_days > 0:
+        days_in_week = min(extra_days, 7)
+
+        rate = 10
+        for i in range(1, week + 1):
+            rate *= i
+
+        fine += days_in_week * rate
+        extra_days -= days_in_week
+        week += 1
+
+    return fine
+
+
+# Return book
+def return_book():
+    book_id = input("Enter Book ID: ")
+
+    if book_id in library:
+        if not library[book_id]["available"]:
+            issue_date_str = library[book_id]["issue_date"]
+            allowed_days = library[book_id]["days"]
+
+            issue_date = datetime.strptime(issue_date_str, "%Y-%m-%d %H:%M:%S")
+            return_time = datetime.now()
+            return_str = return_time.strftime("%Y-%m-%d %H:%M:%S")
+
+            total_days = (return_time - issue_date).days
+            extra_days = total_days - allowed_days
+
+            print("\n📖 RETURN DETAILS")
+            print(f"👤 Student: {library[book_id]['issued_to']}")
+            print(f"📅 Issued On: {issue_date_str}")
+            print(f"📅 Returned On: {return_str}")
+
+            if extra_days > 0:
+                fine = calculate_fine(extra_days)
+                print(f"⚠ Late by {extra_days} days")
+                print(f"💰 Fine: {fine} Rs")
+            else:
+                print("✅ Returned on time. No fine.")
+
+            # Reset book
+            library[book_id].update({
+                "available": True,
+                "issued_to": None,
+                "issue_date": None,
+                "return_date": return_str,
+                "days": 0
+            })
+
+            save_data(library)
+
+        else:
+            print("❌ Book was not issued.")
+    else:
+        print("❌ Invalid Book ID.")
+
+
+# Main menu
+def main():
+    while True:
+        print("\n📖 LIBRARY SYSTEM MENU")
+        print("1. Show Books")
+        print("2. Issue Book")
+        print("3. Return Book")
+        print("4. Exit")
+
+        choice = input("Choose (1-4): ")
+
+        if choice == "1":
+            display_books()
+        elif choice == "2":
+            issue_book()
+        elif choice == "3":
+            return_book()
+        elif choice == "4":
+            print("👋 Goodbye!")
+            break
+        else:
+            print("❌ Invalid choice!")
+
+
+main()
